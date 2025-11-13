@@ -141,3 +141,130 @@ def prompt_exportar_json(cursor, dados_brutos, nome_base_arquivo):
             break
         else:
             print("Opção inválida. Digite 's' ou 'n'.")
+
+
+
+ # --- Função CRUD Colaborador  ---
+
+def criar_colaborador(conn):
+    print("\n---- Cadastrar Novo Colaborador ----")
+    # Coleta e valida os dados de entrada
+    nome = validar_texto_nao_vazio("Nome: ")
+    email = validar_texto_nao_vazio("Email: ")
+    cargo = validar_texto_nao_vazio("Cargo: ")
+
+    try:
+        with conn.cursor() as cursor:
+            sql = """
+            INSERT INTO TB_COLABORADOR (NOME, EMAIL, CARGO)
+            VALUES (:1, :2, :3)
+            """
+            cursor.execute(sql, [nome, email, cargo])
+            conn.commit()
+            print(f"Colaborador '{nome}' cadastrado com sucesso!")
+    except oracledb.DatabaseError as e:
+        # Se qualquer erro do banco ocorrer (ex: email duplicado), desfaz a transação
+        print(f"Erro de banco de dados ao criar colaborador: {e}")
+        conn.rollback()
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+        conn.rollback()
+
+
+# Função Listar o colaborar 
+def listar_colaboradores(conn):
+    print("\n--- [ Lista de Colaboradores ] ---")
+    try:
+        with conn.cursor() as cursor:
+            sql = "SELECT ID_COLABORADOR, NOME, EMAIL, CARGO FROM TB_COLABORADOR ORDER BY NOME"
+            cursor.execute(sql)
+            colaboradores = cursor.fetchall()
+            
+            if not colaboradores:
+                print("Nenhum colaborador cadastrado.")
+                return
+            print(f"{'ID':<5} | {'Nome':<30} | {'Email':<35} | {'Cargo':<20}")
+            print("-" * 95)
+            for c in colaboradores:
+                print(f"{c[0]:<5} | {c[1]:<30} | {c[2]:<35} | {c[3]:<20}")
+            cursor.execute(sql) 
+            dados_brutos = cursor.fetchall()
+            prompt_exportar_json(cursor, dados_brutos, "lista_colaboradores")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao listar colaboradores: {e}")
+    except Exception as e:
+       print(f"Erro inesperado: {e}")
+
+
+#Função de Atualizar o Colaborador 
+def atualizar_colaborador(conn):
+    """(Update) Atualiza dados de um colaborador existente."""
+    print("\n--- [ Atualizar Colaborador ] ---")
+    id_colaborador = validar_int("Digite o ID do colaborador que deseja atualizar: ")
+
+    try:
+        with conn.cursor() as cursor:
+            sql_check = "SELECT NOME, EMAIL, CARGO FROM TB_COLABORADOR WHERE ID_COLABORADOR = :1"
+            cursor.execute(sql_check, [id_colaborador])
+            colab = cursor.fetchone() 
+
+            if not colab:
+                print(f"Erro: Colaborador com ID {id_colaborador} não encontrado.")
+                return
+
+            print(f"\nAtualizando dados de: {colab[0]}")
+            print(f"Email atual: {colab[1]}")
+            print(f"Cargo atual: {colab[2]}")
+            novo_email = input(f"Novo Email (atual: {colab[1]}): ").strip() or colab[1]
+            novo_cargo = input(f"Novo Cargo (atual: {colab[2]}): ").strip() or colab[2]
+            sql_update = """
+            UPDATE TB_COLABORADOR
+            SET EMAIL = :1, CARGO = :2
+            WHERE ID_COLABORADOR = :3
+            """
+            cursor.execute(sql_update, [novo_email, novo_cargo, id_colaborador])
+            conn.commit()
+            print(f"Dados do colaborador ID {id_colaborador} atualizados com sucesso!")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao atualizar colaborador: {e}")
+        conn.rollback()
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+        conn.rollback()
+        
+#Função para deletar o Colaborador 
+def deletar_colaborador(conn):
+    """(Delete) Remove um colaborador do banco."""
+    print("\n--- [ Deletar Colaborador ] ---")
+    id_colaborador = validar_int("Digite o ID do colaborador que deseja deletar: ")
+    print(f"ATENÇÃO: Deletar o colaborador ID {id_colaborador} também removerá todos os seus")
+    print("check-ins, relatórios e alertas associados (devido às constraints ON DELETE CASCADE).")
+    while True:
+        confirm = input(f"Tem certeza que deseja continuar? (s/n): ").strip().lower()
+        if confirm == 's':
+            break 
+        elif confirm == 'n':
+            print("Operação cancelada.")
+            return 
+        else:
+            print("Opção inválida.")
+            
+    try:
+        with conn.cursor() as cursor:
+            sql_delete = "DELETE FROM TB_COLABORADOR WHERE ID_COLABORADOR = :1"
+            cursor.execute(sql_delete, [id_colaborador])
+            if cursor.rowcount == 0:
+                print(f"Nenhum colaborador encontrado com o ID {id_colaborador}.")
+            else:
+             
+                conn.commit()
+                print(f"Colaborador ID {id_colaborador} deletado com sucesso.")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao deletar colaborador: {e}")
+        conn.rollback()
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+        conn.rollback()
