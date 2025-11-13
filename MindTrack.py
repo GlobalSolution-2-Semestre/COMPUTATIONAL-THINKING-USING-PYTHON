@@ -616,7 +616,7 @@ def menu_consultas(conn):
         elif escolha == 3:
             consulta_colaboradores_risco(conn)
         elif escolha == 4:
-            break # Quebra o loop 'while True' e retorna ao menu principal
+            break 
         
         input("\nPressione Enter para continuar...")
 
