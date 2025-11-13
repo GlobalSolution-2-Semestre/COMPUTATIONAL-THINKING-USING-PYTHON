@@ -434,3 +434,165 @@ def listar_alertas_por_colaborador(conn):
         print(f"Erro de banco de dados ao listar alertas: {e}")
     except Exception as e:
         print(f"Erro inesperado: {e}")
+
+ # ---- função para Listar Relatorio----
+
+def listar_relatorios_por_colaborador(conn):
+    """(Read) Lista todos os relatórios de um colaborador."""
+    print("\n--- [ Histórico de Relatórios por Colaborador ] ---")
+    id_colaborador = validar_int("Digite o ID do Colaborador para ver os relatórios: ")
+
+    try:
+        with conn.cursor() as cursor:
+            # SQL para buscar relatórios de um colaborador
+            sql = """
+            SELECT ID_RELATORIO, DATA_GERACAO, MEDIA_HUMOR, RESUMO
+            FROM TB_RELATORIO
+            WHERE ID_COLABORADOR = :1
+            ORDER BY DATA_GERACAO DESC
+            """
+            cursor.execute(sql, [id_colaborador])
+            relatorios = cursor.fetchall()
+
+            if not relatorios:
+                print(f"Nenhum relatório encontrado para o colaborador ID {id_colaborador}.")
+                return
+
+            # Imprime os resultados
+            print(f"\nRelatórios do Colaborador ID {id_colaborador}:")
+            print(f"{'<ID>':<5} | {'Data':<15} | {'Média Humor':<12} | {'Resumo'}")
+            print("-" * 80)
+            for r in relatorios:
+                data_formatada = r[1].strftime('%Y-%m-%d')
+                print(f"{r[0]:<5} | {data_formatada:<15} | {r[2]:<12.2f} | {r[3]}")
+            
+            # Exportação JSON (Opcional)
+            cursor.execute(sql, [id_colaborador])
+            dados_brutos = cursor.fetchall()
+            prompt_exportar_json(cursor, dados_brutos, f"historico_relatorios_{id_colaborador}")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao listar relatórios: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
+        # ---- CONSULTAS E EXPORTAÇÃO JSON ----
+
+def consulta_humor_recente(conn):
+    print("\n--- [ Consulta 1: Humor Mais Recente por Colaborador ] ---")
+    
+    sql = """
+    SELECT c.NOME, ch.HUMOR, ch.COMENTARIO, ch.DATA_REGISTRO
+    FROM TB_COLABORADOR c
+    JOIN TB_CHECKIN ch
+      ON ch.ID_COLABORADOR = c.ID_COLABORADOR
+    WHERE ch.DATA_REGISTRO = (
+      SELECT MAX(ch2.DATA_REGISTRO)
+      FROM TB_CHECKIN ch2
+      WHERE ch2.ID_COLABORADOR = c.ID_COLABORADOR
+    )
+    ORDER BY c.NOME
+    """
+    
+    try:
+        with conn.cursor() as cursor:
+            # Executa a consulta complexa
+            cursor.execute(sql)
+            resultados = cursor.fetchall()
+
+            if not resultados:
+                print("Nenhum dado encontrado para gerar o relatório.")
+                return
+
+            # Imprime os resultados
+            print(f"\n{'Nome':<30} | {'Humor':<15} | {'Data':<15} | {'Comentário'}")
+            print("-" * 100)
+            for r in resultados:
+                data_formatada = r[3].strftime('%Y-%m-%d')
+                print(f"{r[0]:<30} | {r[1]:<15} | {data_formatada:<15} | {r[2]}")
+            
+            # Exportação JSON (Opcional)
+            cursor.execute(sql)
+            dados_brutos = cursor.fetchall()
+            prompt_exportar_json(cursor, dados_brutos, "consulta_humor_recente")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados na consulta: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
+def consulta_media_geral_colaborador(conn):
+    print("\n--- [ Consulta 2: Média Geral de Humor (dos Relatórios) ] ---")
+    sql = """
+    SELECT C.NOME, ROUND(AVG(R.MEDIA_HUMOR),2) AS MEDIA_GERAL
+    FROM TB_COLABORADOR C
+    JOIN TB_RELATORIO R ON C.ID_COLABORADOR = R.ID_COLABORADOR
+    GROUP BY C.NOME
+    ORDER BY MEDIA_GERAL DESC
+    """
+    
+    try:
+        with conn.cursor() as cursor:
+            # Executa a consulta de agregação
+            cursor.execute(sql)
+            resultados = cursor.fetchall()
+
+            if not resultados:
+                print("Nenhum relatório encontrado para calcular médias.")
+                return
+
+            # Imprime os resultados
+            print(f"\n{'Nome':<30} | {'Média de Humor (Relatórios)'}")
+            print("-" * 60)
+            for r in resultados:
+                print(f"{r[0]:<30} | {r[1]:<12.2f}")
+            
+            # Exportação JSON (Opcional)
+            cursor.execute(sql)
+            dados_brutos = cursor.fetchall()
+            prompt_exportar_json(cursor, dados_brutos, "consulta_media_humor_relatorios")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados na consulta: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
+def consulta_colaboradores_risco(conn):
+    print("\n--- [ Consulta 3: Colaboradores em Risco (Média < 7) ] ---")
+
+    sql = """
+    SELECT C.NOME, ROUND(AVG(R.MEDIA_HUMOR),2) AS MEDIA_HUMOR
+    FROM TB_COLABORADOR C
+    JOIN TB_RELATORIO R ON C.ID_COLABORADOR = R.ID_COLABORADOR
+    GROUP BY C.NOME
+    HAVING AVG(R.MEDIA_HUMOR) < 7
+    ORDER BY MEDIA_HUMOR ASC
+    """
+    
+    try:
+        with conn.cursor() as cursor:
+            #  Executa a consulta com filtro de agregação (HAVING)
+            cursor.execute(sql)
+            resultados = cursor.fetchall()
+
+            if not resultados:
+                print("Nenhum colaborador encontrado com média de humor abaixo de 7.")
+                return
+
+            #  Imprime os resultados
+            print("\nColaboradores que podem precisar de atenção:")
+            print(f"\n{'Nome':<30} | {'Média de Humor (Relatórios)'}")
+            print("-" * 60)
+            for r in resultados:
+                print(f"{r[0]:<30} | {r[1]:<12.2f}")
+            
+            #  Exportação JSON (Opcional)
+            cursor.execute(sql)
+            dados_brutos = cursor.fetchall()
+            prompt_exportar_json(cursor, dados_brutos, "consulta_colaboradores_risco")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados na consulta: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
