@@ -402,7 +402,7 @@ def listar_alertas_por_colaborador(conn):
 
     try:
         with conn.cursor() as cursor:
-            #  SQL para buscar alertas de um colaborador
+            # SQL para buscar alertas de um colaborador
             sql = """
             SELECT ID_ALERTA, TIPO_ALERTA, DESCRICAO, DATA_ENVIO
             FROM TB_ALERTA
@@ -476,7 +476,7 @@ def listar_relatorios_por_colaborador(conn):
     except Exception as e:
         print(f"Erro inesperado: {e}")
 
-        # ---- CONSULTAS E EXPORTAÇÃO JSON ----
+# ---- CONSULTAS E EXPORTAÇÃO JSON ----
 
 def consulta_humor_recente(conn):
     print("\n--- [ Consulta 1: Humor Mais Recente por Colaborador ] ---")
@@ -571,7 +571,7 @@ def consulta_colaboradores_risco(conn):
     
     try:
         with conn.cursor() as cursor:
-            #  Executa a consulta com filtro de agregação (HAVING)
+            # Executa a consulta com filtro de agregação (HAVING)
             cursor.execute(sql)
             resultados = cursor.fetchall()
 
@@ -579,14 +579,14 @@ def consulta_colaboradores_risco(conn):
                 print("Nenhum colaborador encontrado com média de humor abaixo de 7.")
                 return
 
-            #  Imprime os resultados
+            # Imprime os resultados
             print("\nColaboradores que podem precisar de atenção:")
             print(f"\n{'Nome':<30} | {'Média de Humor (Relatórios)'}")
             print("-" * 60)
             for r in resultados:
                 print(f"{r[0]:<30} | {r[1]:<12.2f}")
             
-            #  Exportação JSON (Opcional)
+            # Exportação JSON (Opcional)
             cursor.execute(sql)
             dados_brutos = cursor.fetchall()
             prompt_exportar_json(cursor, dados_brutos, "consulta_colaboradores_risco")
@@ -595,4 +595,138 @@ def consulta_colaboradores_risco(conn):
         print(f"Erro de banco de dados na consulta: {e}")
     except Exception as e:
         print(f"Erro inesperado: {e}")
+
+ # ---- MENUS DE NAVEGAÇÃO  ----
+
+def menu_consultas(conn):
+    """Menu para as consultas e exportação JSON."""
+    while True:
+        print("\n--- [ Menu de Consultas e Relatórios ] ---")
+        print("1. Ver Humor Mais Recente por Colaborador")
+        print("2. Ver Média de Humor (dos Relatórios) por Colaborador")
+        print("3. Ver Colaboradores em Risco (Média < 7)")
+        print("4. Voltar ao Menu Principal")
+        
+        escolha = validar_int("\nEscolha uma opção: ", 1, 4)
+
+        if escolha == 1:
+            consulta_humor_recente(conn)
+        elif escolha == 2:
+            consulta_media_geral_colaborador(conn)
+        elif escolha == 3:
+            consulta_colaboradores_risco(conn)
+        elif escolha == 4:
+            break # Quebra o loop 'while True' e retorna ao menu principal
+        
+        input("\nPressione Enter para continuar...")
+
+def menu_gerenciar_colaboradores(conn):
+    """Menu para o CRUD de Colaboradores."""
+    while True:
+        print("\n--- [ Gerenciar Colaboradores ] ---")
+        print("1. Cadastrar Novo Colaborador (Create)")
+        print("2. Listar Todos os Colaboradores (Read)")
+        print("3. Atualizar Dados de Colaborador (Update)")
+        print("4. Deletar Colaborador (Delete)")
+        print("5. Voltar ao Menu Principal")
+
+        escolha = validar_int("\nEscolha uma opção: ", 1, 5)
+
+        if escolha == 1:
+            criar_colaborador(conn)
+        elif escolha == 2:
+            listar_colaboradores(conn)
+        elif escolha == 3:
+            atualizar_colaborador(conn)
+        elif escolha == 4:
+            deletar_colaborador(conn)
+        elif escolha == 5:
+            break 
+        
+        input("\nPressione Enter para continuar...")
+
+def menu_gerenciar_checkins(conn):
+    """Menu para o CRUD de Check-ins."""
+    while True:
+        print("\n--- [ Gerenciar Check-ins de Humor ] ---")
+        print("1. Adicionar Novo Check-in (Create)")
+        print("2. Ver Histórico de Check-ins por Colaborador (Read)")
+        print("3. Voltar ao Menu Principal")
+
+
+        escolha = validar_int("\nEscolha uma opção: ", 1, 3)
+
+        if escolha == 1:
+            criar_checkin(conn)
+        elif escolha == 2:
+            listar_checkins_por_colaborador(conn)
+        elif escolha == 3:
+            break 
+        
+        input("\nPressione Enter para continuar...")
+
+def menu_gerenciar_outros(conn):
+    """Menu para Relatórios e Alertas."""
+    while True:
+        print("\n--- [ Gerenciar Relatórios e Alertas ] ---")
+        print("1. Ver Histórico de Relatórios por Colaborador (Read)")
+        print("2. Criar Alerta Manual (Create)")
+        print("3. Ver Histórico de Alertas por Colaborador (Read)")
+        print("4. Voltar ao Menu Principal")
+
+        escolha = validar_int("\nEscolha uma opção: ", 1, 4)
+
+        if escolha == 1:
+            listar_relatorios_por_colaborador(conn)
+        elif escolha == 2:
+            criar_alerta(conn)
+        elif escolha == 3:
+            listar_alertas_por_colaborador(conn)
+        elif escolha == 4:
+            break 
+        
+        input("\nPressione Enter para continuar...")
+
+def main_menu():
+    """Menu principal da aplicação."""
+    print("=" * 50)
+    print("   Plataforma de Monitoramento de Bem-Estar")
+    print("                (Global Solution)")
+    print("=" * 50)
+
+    # Tenta conectar ao banco UMA VEZ no início.
+    conn = get_connection()
+    if not conn:
+        # Se a conexão falhar, o programa não pode continuar.
+        print("\nFalha crítica na conexão com o banco de dados.")
+        print("Verifique as configurações no início do script (USER, PASS, DSN).")
+        input("Pressione Enter para sair...")
+        return
+
+    print("\nConexão com o Oracle Database estabelecida com sucesso!")
+
+    while True:
+        print("\n--- [ Menu Principal ] ---")
+        print("1. Gerenciar Colaboradores")
+        print("2. Gerenciar Check-ins de Humor")
+        print("3. Gerenciar Relatórios e Alertas")
+        print("4. Consultas e Relatórios (com JSON)")
+        print("5. Sair")
+        
+        escolha = validar_int("\nEscolha uma opção: ", 1, 5)
+
+        if escolha == 1:
+            menu_gerenciar_colaboradores(conn)
+        elif escolha == 2:
+            menu_gerenciar_checkins(conn)
+        elif escolha == 3:
+            menu_gerenciar_outros(conn)
+        elif escolha == 4:
+            menu_consultas(conn)
+        elif escolha == 5:
+            # Se o usuário escolher sair, fecha a conexão com o banco
+            print("Encerrando a conexão...")
+            conn.close()
+            print("Programa finalizado.")
+            break 
 
