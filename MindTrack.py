@@ -93,3 +93,51 @@ def validar_opcao(prompt, opcoes_validas):
             return opcoes_validas[indice]
         else:
             print("Opção inválida. Por favor, escolha uma das opções listadas.")
+
+
+
+ # --- FUNÇÕES DE EXPORTAÇÃO JSON ---
+
+def formatar_resultados_para_json(cursor, dados_brutos):
+    """Converte resultados brutos do cursor em uma lista de dicionários."""
+    # Obtém os nomes das colunas da consulta (ex: 'NOME', 'EMAIL')
+    # cursor.description contém metadados das colunas
+    colunas = [col[0].lower() for col in cursor.description]
+    resultados = []
+    
+    # 2. Itera sobre cada linha de dados brutos (que são tuplas)
+    for linha in dados_brutos:
+        #  'zip' combina os nomes das colunas com os dados da linha
+        #    dict() transforma essa combinação em um dicionário
+        #    Ex: zip(['nome', 'email'], ('Ana', 'ana@email.com')) -> {'nome': 'Ana', 'email': 'ana@email.com'}
+        resultados.append(dict(zip(colunas, linha)))
+    return resultados
+
+def exportar_para_json(dados, nome_arquivo):
+    """Exporta uma lista de dicionários para um arquivo JSON."""
+    try:
+        with open(nome_arquivo, 'w', encoding='utf-8') as f:
+            json.dump(dados, f, indent=4, ensure_ascii=False, default=str)
+        print(f"\nSucesso! Dados exportados para '{nome_arquivo}'.")
+    except IOError as e:
+        print(f"Erro ao escrever o arquivo JSON: {e}")
+    except Exception as e:
+        print(f"Erro inesperado ao exportar JSON: {e}")
+
+def prompt_exportar_json(cursor, dados_brutos, nome_base_arquivo):
+    """Pergunta ao usuário se deseja exportar os resultados."""
+    while True:
+        escolha = input("\nDeseja exportar estes resultados para JSON? (s/n): ").strip().lower()
+        if escolha == 's':
+            # Formata os dados brutos (tuplas) para JSON (lista de dicts)
+            dados_formatados = formatar_resultados_para_json(cursor, dados_brutos)
+            # Cria um timestamp (data_hora) para garantir um nome de arquivo único
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            nome_arquivo = f"{nome_base_arquivo}_{timestamp}.json"
+            # Chama a função de exportação
+            exportar_para_json(dados_formatados, nome_arquivo)
+            break
+        elif escolha == 'n':
+            break
+        else:
+            print("Opção inválida. Digite 's' ou 'n'.")
