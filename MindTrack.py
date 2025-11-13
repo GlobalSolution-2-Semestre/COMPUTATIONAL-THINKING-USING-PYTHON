@@ -197,7 +197,7 @@ def listar_colaboradores(conn):
        print(f"Erro inesperado: {e}")
 
 
-#Função de Atualizar o Colaborador 
+#Função de Atualizar Colaborador 
 def atualizar_colaborador(conn):
     """(Update) Atualiza dados de um colaborador existente."""
     print("\n--- [ Atualizar Colaborador ] ---")
@@ -233,8 +233,8 @@ def atualizar_colaborador(conn):
     except Exception as e:
         print(f"Erro inesperado: {e}")
         conn.rollback()
-        
-#Função para deletar o Colaborador 
+
+#Função para deletar Colaborador 
 def deletar_colaborador(conn):
     """(Delete) Remove um colaborador do banco."""
     print("\n--- [ Deletar Colaborador ] ---")
@@ -268,3 +268,169 @@ def deletar_colaborador(conn):
     except Exception as e:
         print(f"Erro inesperado: {e}")
         conn.rollback()
+# 
+#---- função para Criar Checkin ----
+def criar_checkin(conn):
+    """(Create) Adiciona um novo check-in de humor."""
+    print("\n--- [ Novo Check-in de Humor ] ---")
+    
+    id_colaborador = validar_int("Digite o seu ID de Colaborador: ")
+    try:
+        with conn.cursor() as cursor_check:
+            cursor_check.execute("SELECT NOME FROM TB_COLABORADOR WHERE ID_COLABORADOR = :1", [id_colaborador])
+            colab = cursor_check.fetchone()
+            if not colab:
+                print(f"Erro: Colaborador com ID {id_colaborador} não encontrado.")
+                return # Interrompe a função se o ID não for válido
+            print(f"Registrando check-in para: {colab[0]}")
+    except oracledb.DatabaseError as e:
+        print(f"Erro ao verificar colaborador: {e}")
+        return
+
+    # 2. Coleta de dados do check-in
+    opcoes_humor = ['Feliz','Motivado','Tranquilo','Neutro','Cansado','Estressado']
+    humor = validar_opcao("Como você está se sentindo? ", opcoes_humor)
+    comentario = input("Gostaria de adicionar um comentário? (opcional): ").strip()
+
+    try:
+        with conn.cursor() as cursor:
+            #  Executa o INSERT
+            sql = """
+            INSERT INTO TB_CHECKIN (ID_COLABORADOR, HUMOR, COMENTARIO)
+            VALUES (:1, :2, :3)
+            """
+            cursor.execute(sql, [id_colaborador, humor, comentario])
+            #  Confirma (salva) o check-in
+            conn.commit()
+            print("Check-in de humor salvo com sucesso!")
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao salvar check-in: {e}")
+        conn.rollback()
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+        conn.rollback()
+
+#---- função para Listar Checkin ----
+
+def listar_checkins_por_colaborador(conn):
+    """(Read) Lista todos os check-ins de um colaborador específico."""
+    print("\n--- [ Histórico de Check-ins por Colaborador ] ---")
+    id_colaborador = validar_int("Digite o ID do Colaborador para ver o histórico: ")
+
+    try:
+        with conn.cursor() as cursor:
+            #  SQL para buscar check-ins de um colaborador específico
+            sql = """
+            SELECT ID_CHECKIN, DATA_REGISTRO, HUMOR, COMENTARIO
+            FROM TB_CHECKIN
+            WHERE ID_COLABORADOR = :1
+            ORDER BY DATA_REGISTRO DESC
+            """
+            #  Executa a consulta passando o ID como parâmetro
+            cursor.execute(sql, [id_colaborador])
+            registros = cursor.fetchall()
+
+            if not registros:
+                print(f"Nenhum check-in encontrado para o colaborador ID {id_colaborador}.")
+                return
+
+            #  Imprime os resultados
+            print(f"\nHistórico do Colaborador ID {id_colaborador}:")
+            print(f"{'ID Chk':<8} | {'Data':<20} | {'Humor':<15} | {'Comentário'}")
+            print("-" * 80)
+            for r in registros:
+                data_formatada = r[1].strftime('%Y-%m-%d')
+                print(f"{r[0]:<8} | {data_formatada:<20} | {r[2]:<15} | {r[3]}")
+            
+            #  Exportação JSON (Opcional)
+            cursor.execute(sql, [id_colaborador])
+            dados_brutos = cursor.fetchall()
+            prompt_exportar_json(cursor, dados_brutos, f"historico_checkin_{id_colaborador}")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao listar check-ins: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+
+#---- função para Criar Alerta ----
+
+def criar_alerta(conn):
+    """(Create) Cria um novo alerta manual para um colaborador."""
+    print("\n--- [ Criar Novo Alerta (Manual) ] ---")
+    
+    id_colaborador = validar_int("Digite o ID do Colaborador: ")
+    try:
+        with conn.cursor() as cursor_check:
+            cursor_check.execute("SELECT NOME FROM TB_COLABORADOR WHERE ID_COLABORADOR = :1", [id_colaborador])
+            colab = cursor_check.fetchone()
+            if not colab:
+                print(f"Erro: Colaborador com ID {id_colaborador} não encontrado.")
+                return
+            print(f"Criando alerta para: {colab[0]}")
+    except oracledb.DatabaseError as e:
+        print(f"Erro ao verificar colaborador: {e}")
+        return
+
+    #  Coleta de dados do alerta
+    opcoes_alerta = ['Informativo', 'Atenção', 'Crítico', 'Aviso']
+    tipo_alerta = validar_opcao("Tipo do Alerta: ", opcoes_alerta)
+    descricao = validar_texto_nao_vazio("Descrição do Alerta: ")
+
+    try:
+        with conn.cursor() as cursor:
+            # 3. Executa o INSERT
+            # DATA_ENVIO usa o default (SYSTIMESTAMP) do banco
+            sql = """
+            INSERT INTO TB_ALERTA (ID_COLABORADOR, TIPO_ALERTA, DESCRICAO)
+            VALUES (:1, :2, :3)
+            """
+            cursor.execute(sql, [id_colaborador, tipo_alerta, descricao])
+            # 4. Confirma (salva) o alerta
+            conn.commit()
+            print("Alerta criado com sucesso!")
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao criar alerta: {e}")
+        conn.rollback()
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
+        conn.rollback()
+#---- função para Listar Alertas  ----
+def listar_alertas_por_colaborador(conn):
+    """(Read) Lista todos os alertas de um colaborador."""
+    print("\n--- [ Histórico de Alertas por Colaborador ] ---")
+    id_colaborador = validar_int("Digite o ID do Colaborador para ver os alertas: ")
+
+    try:
+        with conn.cursor() as cursor:
+            #  SQL para buscar alertas de um colaborador
+            sql = """
+            SELECT ID_ALERTA, TIPO_ALERTA, DESCRICAO, DATA_ENVIO
+            FROM TB_ALERTA
+            WHERE ID_COLABORADOR = :1
+            ORDER BY DATA_ENVIO DESC
+            """
+            cursor.execute(sql, [id_colaborador])
+            alertas = cursor.fetchall()
+
+            if not alertas:
+                print(f"Nenhum alerta encontrado para o colaborador ID {id_colaborador}.")
+                return
+
+            #  Imprime os resultados
+            print(f"\nAlertas do Colaborador ID {id_colaborador}:")
+            print(f"{'ID':<5} | {'Data/Hora':<20} | {'Tipo':<12} | {'Descrição'}")
+            print("-" * 80)
+            for a in alertas:
+                # Formata o objeto 'timestamp' do Oracle para 'YYYY-MM-DD HH:MM'
+                data_formatada = a[3].strftime('%Y-%m-%d %H:%M')
+                print(f"{a[0]:<5} | {data_formatada:<20} | {a[1]:<12} | {a[2]}")
+            
+            # Exportação JSON (Opcional)
+            cursor.execute(sql, [id_colaborador])
+            dados_brutos = cursor.fetchall()
+            prompt_exportar_json(cursor, dados_brutos, f"historico_alertas_{id_colaborador}")
+
+    except oracledb.DatabaseError as e:
+        print(f"Erro de banco de dados ao listar alertas: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
