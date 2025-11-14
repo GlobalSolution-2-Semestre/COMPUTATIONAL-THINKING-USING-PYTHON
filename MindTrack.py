@@ -11,18 +11,7 @@ from datetime import datetime  #
 # --- CONFIGURAÇÃO DE CONEXÃO ORACLE ---
 ORACLE_USER = "rm562396"
 ORACLE_PASS = "230407"
-ORACLE_DSN = "oracle.com.fiap:1521/orcl"  
-
-print("""
-
-███╗░░░███╗██╗███╗░░██╗██████╗░████████╗██████╗░░█████╗░░█████╗░██╗░░██╗
-████╗░████║██║████╗░██║██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗██║░██╔╝
-██╔████╔██║██║██╔██╗██║██║░░██║░░░██║░░░██████╔╝███████║██║░░╚═╝█████═╝░
-██║╚██╔╝██║██║██║╚████║██║░░██║░░░██║░░░██╔══██╗██╔══██║██║░░██╗██╔═██╗░
-██║░╚═╝░██║██║██║░╚███║██████╔╝░░░██║░░░██║░░██║██║░░██║╚█████╔╝██║░╚██╗
-╚═╝░░░░░╚═╝╚═╝╚═╝░░╚══╝╚═════╝░░░░╚═╝░░░╚═╝░░╚═╝╚═╝░░╚═╝░╚════╝░╚═╝░░╚═╝
-
- """)
+ORACLE_DSN = "oracle.fiap.com.br:1521/orcl"  
 
 # --- FUNÇÕES DE CONEXÃO COM O BANCO ---
 
@@ -623,11 +612,11 @@ def menu_consultas(conn):
 def menu_gerenciar_colaboradores(conn):
     """Menu para o CRUD de Colaboradores."""
     while True:
-        print("\n--- [ Gerenciar Colaboradores ] ---")
-        print("1. Cadastrar Novo Colaborador (Create)")
-        print("2. Listar Todos os Colaboradores (Read)")
-        print("3. Atualizar Dados de Colaborador (Update)")
-        print("4. Deletar Colaborador (Delete)")
+        print("\n----  Gerenciar Colaboradores  ----")
+        print("1. Cadastrar Novo Colaborador")
+        print("2. Listar Todos os Colaboradores")
+        print("3. Atualizar Dados de Colaborador")
+        print("4. Deletar Colaborador")
         print("5. Voltar ao Menu Principal")
 
         escolha = validar_int("\nEscolha uma opção: ", 1, 5)
@@ -648,9 +637,9 @@ def menu_gerenciar_colaboradores(conn):
 def menu_gerenciar_checkins(conn):
     """Menu para o CRUD de Check-ins."""
     while True:
-        print("\n--- [ Gerenciar Check-ins de Humor ] ---")
-        print("1. Adicionar Novo Check-in (Create)")
-        print("2. Ver Histórico de Check-ins por Colaborador (Read)")
+        print("\n---- Gerenciar Check-ins de Humor  ----")
+        print("1. Adicionar Novo Check-in ")
+        print("2. Ver Histórico de Check-ins por Colaborador ")
         print("3. Voltar ao Menu Principal")
 
 
@@ -668,10 +657,10 @@ def menu_gerenciar_checkins(conn):
 def menu_gerenciar_outros(conn):
     """Menu para Relatórios e Alertas."""
     while True:
-        print("\n--- [ Gerenciar Relatórios e Alertas ] ---")
-        print("1. Ver Histórico de Relatórios por Colaborador (Read)")
-        print("2. Criar Alerta Manual (Create)")
-        print("3. Ver Histórico de Alertas por Colaborador (Read)")
+        print("\n---- Gerenciar Relatórios e Alertas  ----")
+        print("1. Ver Histórico de Relatórios por Colaborador ")
+        print("2. Criar Alerta Manual")
+        print("3. Ver Histórico de Alertas por Colaborador")
         print("4. Voltar ao Menu Principal")
 
         escolha = validar_int("\nEscolha uma opção: ", 1, 4)
@@ -706,7 +695,7 @@ def main_menu():
     print("\nConexão com o Oracle Database estabelecida com sucesso!")
 
     while True:
-        print("\n--- [ Menu Principal ] ---")
+        print("\n----  Menu Principal  ----")
         print("1. Gerenciar Colaboradores")
         print("2. Gerenciar Check-ins de Humor")
         print("3. Gerenciar Relatórios e Alertas")
@@ -730,7 +719,5 @@ def main_menu():
             print("Programa finalizado.")
             break 
 
-        
-# ---- PONTO DE ENTRADA DO SCRIPT ----
 if __name__ == "__main__":
     main_menu()
