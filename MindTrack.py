@@ -730,3 +730,7 @@ def main_menu():
             print("Programa finalizado.")
             break 
 
+        
+# ---- PONTO DE ENTRADA DO SCRIPT ----
+if __name__ == "__main__":
+    main_menu()
