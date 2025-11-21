@@ -12,8 +12,8 @@ import json
 from datetime import datetime
 
 # --- CONFIGURAÇÃO DE CONEXÃO ORACLE ---
-ORACLE_USER = "rm562396"
-ORACLE_PASS = "230407"
+ORACLE_USER = "rm563405"
+ORACLE_PASS = "250307"
 ORACLE_DSN = "oracle.fiap.com.br:1521/orcl"
 
 
